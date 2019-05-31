@@ -1,15 +1,26 @@
 #!/bin/bash
 #Author: Dominic Mages
-#Simple Bash script to ping a list of servers and only output on fail
+#Simple Bash script to ping a list of servers --> output on fail or reconnect
 #(c) 2018
 
 RED='\033[0;31m'
+GREEN='\033[0;32m'
 NC='\033[0m' # No Color
 timestamp() {
   date +"%T"
 } 
 
+exists(){
+  if [ "$2" != in ]; then
+    echo "Incorrect usage."
+    echo "Correct usage: exists {key} in {array}"
+    return
+  fi   
+  eval '[ ${'$3'[$1]+muahaha} ]'  
+}
+
 declare -A HOSTLIST
+declare -A NOTAVAILABLE
 
 # List of hosts to be pinged 
 HOSTLIST[PC]=192.168.0.199 
@@ -32,7 +43,13 @@ do
     do 
         ping -c 1 -W 1 ${HOSTLIST[$K]} > /dev/null
         if [ $? != 0 ]; then
-        echo -e "$(timestamp): ${RED}$K: Host not reachable!${NC}" 
+        NOTAVAILABLE[$K]=$K
+        echo -e "$(timestamp): ${RED}$K: Host not reachable!${NC}"
+        else
+        if exists $K in NOTAVAILABLE; then
+            unset NOTAVAILABLE[$K]
+            echo -e "$(timestamp): ${GREEN}$K: Host reconnected!${NC}"
+        fi
         fi
     done
     sleep 1;
